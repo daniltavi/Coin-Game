@@ -1,0 +1,74 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>Coin Rush</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{--bg:#120a2a;--bg2:#2a0f4d;--card:rgba(255,255,255,.08);--tx:#fff;--mut:#b9a9e8;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:light){:root:not([data-theme=dark]){--bg:#1a0f3a;--bg2:#3a1466}}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:radial-gradient(circle at 20% 0,var(--bg2),var(--bg) 60%) fixed;color:var(--tx);min-height:100vh;max-width:520px;margin:auto;padding:12px 12px 90px}
+h2{margin:6px 0 10px;font-size:20px}.top{display:flex;justify-content:space-between;align-items:center;padding:8px 4px}
+.chip{background:var(--card);border-radius:20px;padding:6px 12px;font-weight:700}
+.card{background:var(--card);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:12px;margin:8px 0;backdrop-filter:blur(6px)}
+.nav{position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:auto;display:flex;gap:4px;padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));background:rgba(18,10,42,.92);overflow-x:auto}
+.nav button{flex:1;min-width:58px;border:0;background:none;color:var(--mut);font-size:11px;padding:6px 2px;border-radius:12px}
+.nav button b{display:block;font-size:20px}.nav .on{background:linear-gradient(135deg,#ff3d8b,#7b4dff);color:#fff}
+.coin{--c:#aaa;width:var(--s,64px);height:var(--s,64px);border-radius:50%;display:grid;place-items:center;font-size:calc(var(--s,64px)*.5);background:radial-gradient(circle at 30% 25%,#fff8,var(--c) 45%,#0007 100%);box-shadow:0 0 18px var(--c),inset 0 0 0 3px #fff5;flex:none}
+.big{--s:200px;margin:18px auto;cursor:pointer;user-select:none;transition:transform .08s;animation:fl 3s ease-in-out infinite}.big:active{transform:scale(.9) rotate(8deg)}
+@keyframes fl{50%{translate:0 -8px}}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.cell{background:var(--card);border-radius:14px;padding:8px 4px;text-align:center;font-size:11px;position:relative}
+.cell .coin{margin:0 auto 4px}.cell.lock{opacity:.35;filter:grayscale(1)}.cnt{position:absolute;top:4px;right:6px;font-weight:800;font-size:12px}
+.row{display:flex;align-items:center;gap:10px}.row>div:nth-child(2){flex:1}
+.btn{border:0;border-radius:14px;padding:9px 14px;font-weight:800;color:#fff;background:linear-gradient(135deg,#ff3d8b,#7b4dff);cursor:pointer}.btn.g{background:linear-gradient(135deg,#19ffd0,#3fa9ff);color:#102}
+input,select{width:100%;padding:10px;border-radius:12px;border:1px solid #fff3;background:#0004;color:#fff;font-size:15px}
+.res{text-align:center;min-height:70px}.tag{font-size:12px;font-weight:800}
+.fx{animation:pop .5s}@keyframes pop{0%{transform:scale(.3);opacity:0}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+.mut{color:var(--mut);font-size:12px}
+</style></head><body><div id="app"></div><div class="nav" id="nav"></div>
+<script>
+const RAR=[["Обычная","#9aa4b2",55,1,50],["Редкая","#3fa9ff",25,3,40],["Эпическая","#b44bff",12,8,30],["Легендарная","#ffb020",5.5,25,15],["Мифическая","#ff3d8b",2,80,10],["Секретная","#19ffd0",.5,300,6]];
+const ADJ="Лунный,Огненный,Ледяной,Неоновый,Кристальный,Теневой,Звёздный,Ядовитый,Золотой,Радужный,Грозовой,Космический".split(","),
+NOUN="Дракон,Феникс,Кристалл,Кометa,Рыцарь,Призрак,Лис,Волк,Робот,Грибок,Тигр,Кракен,Орёл".split(","),
+EM="🐉 🔥 ❄️ ⚡ 💎 👻 ⭐ ☠️ 👑 🌈 🌩️ 🚀 🦊 🐺 🤖 🍄 🐯 🦑 🦅 🌙 🪐 🧿 🎲 🗝️ 🏆 🦄 🌋 🔮 🧊 🪙".split(" ");
+const COINS=[];let id=0;RAR.forEach((r,ri)=>{for(let k=0;k<r[4];k++,id++)COINS.push({id,r:ri,n:ADJ[id%12]+" "+NOUN[Math.floor(id/12)%13].replace("Кометa","Комета"),e:EM[(id*7)%EM.length]})});
+const BOTS=["@neo_fox","@star_kid","@cyber_wolf","@lunar_cat","@mega_ace"];
+const botInv=()=>{let c=0;BOTS.forEach((b,i)=>c+=0);return 0};
+let S;try{S=JSON.parse(localStorage.getItem("cr1")||"null")}catch(e){}
+S=S||{me:null,stars:100,inv:{},friends:[],list:[],clicks:0,bots:BOTS.map((b,i)=>({u:b,n:20+i*13})),offers:null};
+if(!S.me){S.me="@"+((window.Telegram&&Telegram.WebApp&&Telegram.WebApp.initDataUnsafe&&Telegram.WebApp.initDataUnsafe.user&&Telegram.WebApp.initDataUnsafe.user.username)||("player"+Math.floor(Math.random()*9000+1000)))}
+const save=()=>{try{localStorage.setItem("cr1",JSON.stringify(S))}catch(e){}};
+const rnd=n=>Math.floor(Math.random()*n);
+function roll(){let t=RAR.reduce((a,r)=>a+r[2],0),x=Math.random()*t,ri=0;for(;ri<5&&x>=RAR[ri][2];ri++)x-=RAR[ri][2];const p=COINS.filter(c=>c.r==ri);return p[rnd(p.length)]}
+const add=(c,n=1)=>{S.inv[c]=(S.inv[c]||0)+n;if(!S.inv[c])delete S.inv[c]};
+const price=c=>RAR[c.r][3]*3;
+const cn=(c,s)=>`<div class="coin" style="--c:${RAR[c.r][1]};--s:${s||64}px">${c.e}</div>`;
+const owned=()=>Object.keys(S.inv).length;const total=()=>Object.values(S.inv).reduce((a,b)=>a+b,0);
+if(!S.offers){S.offers=[];for(let i=0;i<8;i++){const c=COINS[rnd(150)];S.offers.push({c:c.id,u:BOTS[i%5],p:price(c)+rnd(10)})}}
+let tab="click",last=null,msg="",battle=null;
+const T=[["click","🪙","Клик"],["col","📚","Коллекция"],["top","🏆","Топ"],["auc","🔨","Аукцион"],["prof","👤","Профиль"],["fr","👥","Друзья"],["bat","⚔️","Баттл"]];
+document.getElementById("nav").innerHTML=T.map(t=>`<button data-t="${t[0]}"><b>${t[1]}</b>${t[2]}</button>`).join("");
+document.getElementById("nav").onclick=e=>{const b=e.target.closest("button");if(b){tab=b.dataset.t;msg="";render()}};
+const rarTag=c=>`<span class="tag" style="color:${RAR[c.r][1]}">${RAR[c.r][0]}</span>`;
+const V={
+click(){return`<div class="card res">${last?`<div class="fx" style="display:flex;justify-content:center;gap:12px;align-items:center">${cn(last,70)}<div><b>${last.n}</b><br>${rarTag(last)}</div></div>`:'<span class="mut">Нажми на монету!</span>'}</div>
+<div class="coin big" style="--c:#cfd6e6" onclick="tap()">🪙</div>
+<div class="card mut">Шансы: ${RAR.map(r=>`<span style="color:${r[1]}">${r[0]} ${r[2]}%</span>`).join(" · ")}</div>`},
+col(){return`<h2>📚 Коллекция ${owned()}/${COINS.length}</h2><div class="grid">${COINS.map(c=>{const n=S.inv[c.id];return`<div class="cell ${n?"":"lock"}" onclick="${n?`pick(${c.id})`:""}">${n>1?`<span class="cnt">×${n}</span>`:""}${cn(c,52)}${n?c.n:"???"}<br>${rarTag(c)}</div>`}).join("")}</div>`},
+top(){const all=[{u:S.me+" (ты)",n:total()},...S.bots].sort((a,b)=>b.n-a.n);return`<h2>🏆 Топ коллекционеров</h2>${all.map((p,i)=>`<div class="card row"><b style="font-size:22px">${["🥇","🥈","🥉"][i]||i+1}</b><div>${p.u}</div><b>${p.n} 🪙</b></div>`).join("")}`},
+auc(){const mine=S.list;return`<h2>🔨 Аукцион</h2><div class="chip">⭐ ${S.stars}</div><div class="mut" style="margin:6px 0">${msg}</div>
+${S.offers.map((o,i)=>{const c=COINS[o.c];return`<div class="card row">${cn(c,50)}<div><b>${c.n}</b><br>${rarTag(c)} <span class="mut">${o.u}</span></div><button class="btn g" onclick="buy(${i})">⭐ ${o.p}</button></div>`}).join("")||'<div class="card mut">Пусто</div>'}
+<h2>Мои лоты</h2>${mine.map((o,i)=>{const c=COINS[o.c];return`<div class="card row">${cn(c,44)}<div>${c.n}</div><button class="btn" onclick="unlist(${i})">Снять ⭐${o.p}</button></div>`}).join("")||'<div class="card mut">Выставь монету из Коллекции или Профиля — она исчезнет из коллекции.</div>'}`},
+prof(){const best=COINS.filter(c=>S.inv[c.id]).sort((a,b)=>b.r-a.r).slice(0,6);return`<div class="card" style="text-align:center"><div class="coin" style="--s:90px;--c:#7b4dff;margin:auto">👤</div><h2>${S.me}</h2><div class="row" style="justify-content:center"><span class="chip">⭐ ${S.stars}</span><span class="chip">🪙 ${total()}</span><span class="chip">📚 ${owned()}/${COINS.length}</span></div></div>
+<h2>Витрина лучших монет</h2><div class="grid">${best.map(c=>`<div class="cell" onclick="pick(${c.id})">${cn(c,52)}${c.n}<br>${rarTag(c)}</div>`).join("")||'<div class="card mut">Пока пусто</div>'}</div>`},
+fr(){return`<h2>👥 Друзья</h2><div class="card"><input id="fi" placeholder="@username друга"><br><br><button class="btn" onclick="addF()">Добавить</button><div class="mut">${msg}</div></div>${S.friends.map(f=>`<div class="card row"><div class="coin" style="--s:40px;--c:#19ffd0">👤</div><div>${f}</div></div>`).join("")}`},
+bat(){const b=battle;return`<h2>⚔️ Баттл</h2><div class="card">Кликов на игрока: <b id="bn">20</b><input type="range" id="bs" min="10" max="50" step="5" value="20" oninput="bn.textContent=this.value">
+<br><br>Соперник<select id="bo">${[...S.friends,...BOTS].filter((v,i,a)=>a.indexOf(v)==i).map(f=>`<option>${f}</option>`).join("")}</select><br><br><button class="btn" onclick="fight()">В бой!</button><div class="mut">Все выпавшие монеты забирает победитель. Проигравший остаётся ни с чем.</div></div>
+${b?`<div class="card"><b>${b.win?"🏆 Ты победил!":b.tie?"🤝 Ничья — монеты твои":"💀 Ты проиграл"}</b> (${b.a} : ${b.b})<div class="grid" style="margin-top:8px">${b.rolls.map(c=>`<div class="cell">${cn(c,40)}${rarTag(c)}</div>`).join("")}</div></div>`:""}`}};
+function render(){document.querySelectorAll("#nav button").forEach(b=>b.classList.toggle("on",b.dataset.t==tab));document.getElementById("app").innerHTML=`<div class="top"><b>🪙 Coin Rush</b><span class="chip">⭐ ${S.stars}</span></div>`+V[tab]();save()}
+function tap(){last=roll();add(last.id);render()}
+function pick(i){const c=COINS[i],n=S.inv[i];if(!n)return;const a=prompt(`${c.n} (${RAR[c.r][0]}), у тебя ×${n}\n1 — продать на аукционе\n2 — передать другу`,"1");if(a=="1"){const p=+prompt("Цена в ⭐",price(c));if(p>0){add(i,-1);S.list.push({c:i,p});tab="auc";msg="Лот выставлен";render()}}else if(a=="2"){const u=prompt("Username получателя","@");if(u&&u.length>1){add(i,-1);msg="";alert(`Передано ${u} (демо: получатель — бот)`);render()}}}
+function buy(i){const o=S.offers[i];if(S.stars<o.p){msg="Не хватает ⭐";return render()}S.stars-=o.p;add(o.c);S.offers.splice(i,1);msg="Куплено: "+COINS[o.c].n;render()}
+function unlist(i){add(S.list[i].c);S.list.splice(i,1);render()}
+function addF(){let v=document.getElementById("fi").value.trim();if(!v)return;if(v[0]!="@")v="@"+v;if(v=="@"||v==S.me)return;if(!S.friends.includes(v))S.friends.push(v);msg="Добавлен "+v;render()}
+function fight(){const n=+document.getElementById("bs").value,A=[],B=[];for(let i=0;i<n;i++){A.push(roll());B.push(roll())}const sc=l=>l.reduce((s,c)=>s+RAR[c.r][3],0),a=sc(A),b=sc(B);
+if(a>=b){A.concat(B).forEach(c=>add(c.id))}battle={a,b,win:a>b,tie:a==b,rolls:[...A,...B].sort((x,y)=>y.r-x.r).slice(0,12)};render()}
+render();
+</script></body></html>
